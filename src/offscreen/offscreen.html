@@ -1,0 +1,12 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>ICD-10 Finder embedding worker</title>
+  </head>
+  <body>
+    <!-- Hidden offscreen document: hosts the ONNX/WASM embedding model, which
+         cannot run in the service worker (dynamic import() is disallowed there). -->
+    <script type="module" src="offscreen.js"></script>
+  </body>
+</html>

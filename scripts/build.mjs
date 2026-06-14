@@ -17,6 +17,7 @@ const buildOptions = {
     'service-worker': join(ROOT, 'src/background/service-worker.ts'),
     content: join(ROOT, 'src/ui/content.ts'),
     options: join(ROOT, 'src/ui/options.ts'),
+    offscreen: join(ROOT, 'src/offscreen/offscreen.ts'),
   },
   bundle: true,
   format: 'esm',
@@ -31,6 +32,7 @@ const buildOptions = {
 async function copyAssets() {
   await cp(join(ROOT, 'public/manifest.json'), join(DIST, 'manifest.json'));
   await cp(join(ROOT, 'src/ui/options.html'), join(DIST, 'options.html'));
+  await cp(join(ROOT, 'src/offscreen/offscreen.html'), join(DIST, 'offscreen.html'));
   await cp(join(ROOT, 'data'), join(DIST, 'data'), { recursive: true });
   await cp(join(ROOT, 'models', MODEL_DIR), join(DIST, 'models', MODEL_DIR), { recursive: true });
   await mkdir(join(DIST, 'wasm'), { recursive: true });
