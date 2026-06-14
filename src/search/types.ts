@@ -3,7 +3,7 @@ export interface IcdRecord {
   name: string;
 }
 
-export type MatchSource = 'keyword' | 'vector' | 'online';
+export type MatchSource = 'keyword' | 'vector' | 'online' | 'llm';
 
 export interface SearchResult {
   code: string;

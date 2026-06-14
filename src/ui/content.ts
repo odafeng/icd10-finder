@@ -72,6 +72,7 @@ function close(): void {
 }
 
 function srcBadge(sources: SearchResult['sources']): string {
+  if (sources.includes('llm')) return 'llm';
   if (sources.includes('online')) return 'online';
   if (sources.includes('vector') && sources.includes('keyword')) return 'kw+vec';
   if (sources.includes('vector')) return 'vec';

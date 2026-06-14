@@ -65,10 +65,33 @@ until the service worker idles out.
 
 ## Options
 
+- **Floating popup on selection** — auto-show the result card when you highlight
+  text. Turn it off to trigger lookups only via the right-click context menu.
 - **Online enhancement (NLM)** — also query the NLM Clinical Table Search Service
   for the freshest matches. **Off by default**; turning it on sends the
   highlighted text to `clinicaltables.nlm.nih.gov` and requests that host
   permission. Leave it off when working with patient data.
+- **LLM query expansion** — **opt-in, off by default.** Before searching, an LLM
+  rewrites a lay term ("heart attack") into formal ICD-10 phrasing ("acute
+  myocardial infarction") and the engine searches those too; LLM-surfaced codes
+  get an `llm` badge. Two modes:
+  - **Local** — an OpenAI-compatible endpoint on the same machine (e.g. Ollama).
+    Only works where such a server is installed — a stock hospital PC has none.
+  - **Cloud** — OpenAI / Anthropic / a custom OpenAI-compatible API. Pick a model
+    (the list loads live from the provider's `/models`), enter an API key (stored
+    in `chrome.storage.local`, never synced). **Sends the highlighted text to the
+    provider — do not use with patient data.**
+
+  Host permission for the chosen endpoint is requested at save time. The default
+  offline keyword+vector search is unaffected when this is off.
+
+> **Note on the target machine.** This is built to run on a hospital PC with **no
+> local LLM and uncertain/blocked network egress**. So the generative-LLM layer
+> above is best-effort and often unavailable there. A fully-offline bundled
+> in-browser LLM was evaluated and rejected: the smallest usable instruct model
+> (Qwen2.5-0.5B) is ~512 MB and runs a single expansion in tens of seconds on
+> WASM, with marginal medical-synonym quality. The realistic offline quality
+> lever is the embedding model (see Known limitations), not a generative LLM.
 
 ## Develop
 

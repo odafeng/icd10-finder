@@ -4,7 +4,11 @@
   "version": "0.1.0",
   "description": "Highlight a disease name or keyword to get recommended ICD-10-CM codes via offline semantic + keyword search.",
   "permissions": ["contextMenus", "storage", "offscreen"],
-  "optional_host_permissions": ["https://clinicaltables.nlm.nih.gov/*"],
+  "optional_host_permissions": [
+    "https://clinicaltables.nlm.nih.gov/*",
+    "http://*/*",
+    "https://*/*"
+  ],
   "content_security_policy": {
     "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'"
   },
