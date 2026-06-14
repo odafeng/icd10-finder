@@ -16,3 +16,7 @@ video/s2probe/
 video/seg/
 video/*.mp4
 video/assets/
+video/font.ttc
+video/font_light.ttc
+video/png/
+video/check_s2.png
