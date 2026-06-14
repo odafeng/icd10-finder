@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <title>ICD-10 Finder — Options</title>
+    <title>ICD-10 Finder — 選項</title>
     <style>
       body {
         font:
@@ -42,29 +42,25 @@
   <body>
     <h1>ICD-10 Finder</h1>
     <p class="hint">
-      Highlight a disease name or keyword on any page to get recommended ICD-10-CM codes. All search
-      runs <strong>offline</strong> on your machine by default.
+      在任何網頁上反白病名或關鍵字,即可取得推薦的 ICD-10-CM
+      代碼。所有搜尋預設<strong>離線</strong>在你的電腦上執行。
     </p>
 
     <div class="opt">
       <input type="checkbox" id="autoPopup" />
       <div>
-        <label for="autoPopup">Floating popup on selection</label>
-        <div class="hint">
-          Show the result card automatically when you highlight text. Turn this off to trigger
-          lookups only via right-click → "Find ICD-10 for …".
-        </div>
+        <label for="autoPopup">反白時自動彈出懸浮視窗</label>
+        <div class="hint">反白文字時自動顯示結果卡片。關閉後,改用右鍵選單「查 ICD-10」來查詢。</div>
       </div>
     </div>
 
     <div class="opt">
       <input type="checkbox" id="onlineEnhance" />
       <div>
-        <label for="onlineEnhance">Online enhancement (NLM)</label>
+        <label for="onlineEnhance">線上增強(NLM)</label>
         <div class="hint">
-          Also query the NLM Clinical Table Search Service for the freshest matches. This sends the
-          highlighted text to <code>clinicaltables.nlm.nih.gov</code>. Off by default — leave off
-          when working with patient data.
+          額外查詢 NLM Clinical Table Search Service 取得最新比對結果。這會把反白文字送到
+          <code>clinicaltables.nlm.nih.gov</code>。預設關閉 —— 處理病人資料時請保持關閉。
         </div>
       </div>
     </div>

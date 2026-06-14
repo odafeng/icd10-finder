@@ -22,9 +22,7 @@ async function init(): Promise<void> {
 autoPopup.addEventListener('change', async () => {
   await chrome.storage.sync.set({ autoPopup: autoPopup.checked });
   setStatus(
-    autoPopup.checked
-      ? 'Floating popup on.'
-      : 'Floating popup off — use right-click → "Find ICD-10 for …".',
+    autoPopup.checked ? '已開啟懸浮視窗。' : '已關閉懸浮視窗 —— 請改用右鍵選單「查 ICD-10」查詢。',
   );
 });
 
@@ -33,12 +31,12 @@ checkbox.addEventListener('change', async () => {
     const granted = await chrome.permissions.request({ origins: [NLM_ORIGIN] });
     if (!granted) {
       checkbox.checked = false;
-      setStatus('Permission denied — online enhancement stays off.');
+      setStatus('權限被拒 —— 線上增強維持關閉。');
       return;
     }
   }
   await chrome.storage.sync.set({ onlineEnhance: checkbox.checked });
-  setStatus(checkbox.checked ? 'Online enhancement on.' : 'Offline only.');
+  setStatus(checkbox.checked ? '已開啟線上增強。' : '僅離線。');
 });
 
 void init();

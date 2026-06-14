@@ -87,9 +87,9 @@ function showToast(text: string): void {
 async function copyCode(code: string): Promise<void> {
   try {
     await navigator.clipboard.writeText(code);
-    showToast(`Copied ${code} ✓`);
+    showToast(`已複製 ${code} ✓`);
   } catch {
-    showToast(`Press ⌘C to copy ${code}`);
+    showToast(`請按 ⌘C 複製 ${code}`);
   }
 }
 
@@ -148,7 +148,7 @@ function renderResults(query: string, results: SearchResult[], x: number, y: num
   if (results.length === 0) {
     const msg = document.createElement('div');
     msg.className = 'msg';
-    msg.textContent = 'No ICD-10 match found.';
+    msg.textContent = '找不到符合的 ICD-10 代碼。';
     body.append(msg);
     return;
   }
@@ -183,19 +183,25 @@ function renderMessage(query: string, text: string, x: number, y: number, isErro
 
 function requestLookup(query: string, x: number, y: number): void {
   const seq = ++reqSeq;
-  renderMessage(query, 'Searching…', x, y);
-  chrome.runtime.sendMessage({ type: 'icd-search', query }, (resp) => {
-    if (seq !== reqSeq) return; // a newer request superseded this one
-    if (chrome.runtime.lastError) {
-      renderMessage(query, `Extension error: ${chrome.runtime.lastError.message}`, x, y, true);
-      return;
-    }
-    if (!resp || resp.error) {
-      renderMessage(query, `Search error: ${resp?.error ?? 'no response'}`, x, y, true);
-      return;
-    }
-    renderResults(query, resp.results as SearchResult[], x, y);
-  });
+  renderMessage(query, '搜尋中…', x, y);
+  try {
+    chrome.runtime.sendMessage({ type: 'icd-search', query }, (resp) => {
+      if (seq !== reqSeq) return; // a newer request superseded this one
+      if (chrome.runtime.lastError) {
+        renderMessage(query, `擴充功能錯誤:${chrome.runtime.lastError.message}`, x, y, true);
+        return;
+      }
+      if (!resp || resp.error) {
+        renderMessage(query, `搜尋錯誤:${resp?.error ?? '沒有回應'}`, x, y, true);
+        return;
+      }
+      renderResults(query, resp.results as SearchResult[], x, y);
+    });
+  } catch {
+    // The extension was reloaded/updated while this page kept the old content
+    // script — its runtime is gone. Tell the user to reload rather than hang.
+    renderMessage(query, '擴充功能已更新,請重新整理此頁面(⌘⇧R)後再試。', x, y, true);
+  }
 }
 
 document.addEventListener('mouseup', (e) => {

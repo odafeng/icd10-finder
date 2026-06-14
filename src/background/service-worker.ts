@@ -57,7 +57,7 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
 chrome.runtime.onInstalled.addListener(() => {
   chrome.contextMenus.create({
     id: 'icd-lookup',
-    title: 'Find ICD-10 for "%s"',
+    title: '查 ICD-10:「%s」',
     contexts: ['selection'],
   });
 });
