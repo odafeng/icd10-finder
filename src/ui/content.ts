@@ -156,7 +156,9 @@ document.addEventListener('mouseup', (e) => {
   debounce = setTimeout(() => {
     const sel = window.getSelection();
     const text = sel?.toString().trim() ?? '';
-    if (text.length < MIN_LEN || text.length > MAX_LEN || !/[a-z]/i.test(text)) {
+    // Require some letter (any script, incl. CJK) so we don't trigger on
+    // punctuation/number-only selections.
+    if (text.length < MIN_LEN || text.length > MAX_LEN || !/\p{L}/u.test(text)) {
       return;
     }
     const rect = sel?.getRangeAt(0).getBoundingClientRect();
@@ -172,6 +174,8 @@ document.addEventListener('mousedown', (e) => {
   const host = document.getElementById(HOST_ID);
   if (card && host && !host.contains(e.target as Node)) close();
 });
+
+console.debug('[ICD-10 Finder] content script loaded');
 
 // Context-menu path pushes results directly.
 chrome.runtime.onMessage.addListener((msg) => {
