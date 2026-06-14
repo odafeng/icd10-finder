@@ -43,6 +43,16 @@ let toastEl: HTMLDivElement | null = null;
 let debounce: ReturnType<typeof setTimeout> | undefined;
 let reqSeq = 0;
 
+// Whether to auto-show the card on selection. When off, lookups are triggered
+// only via the right-click context menu. Cached and kept in sync with options.
+let autoPopupEnabled = true;
+chrome.storage.sync.get({ autoPopup: true }).then((v) => {
+  autoPopupEnabled = v.autoPopup;
+});
+chrome.storage.onChanged.addListener((changes, area) => {
+  if (area === 'sync' && changes.autoPopup) autoPopupEnabled = changes.autoPopup.newValue;
+});
+
 function ensureShadow(): ShadowRoot {
   if (shadow) return shadow;
   const host = document.createElement('div');
@@ -189,6 +199,7 @@ function requestLookup(query: string, x: number, y: number): void {
 }
 
 document.addEventListener('mouseup', (e) => {
+  if (!autoPopupEnabled) return; // floating popup disabled → right-click only
   const host = document.getElementById(HOST_ID);
   if (host && host.contains(e.target as Node)) return; // ignore clicks inside our card
 
