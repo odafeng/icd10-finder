@@ -10,3 +10,4 @@ data/embeddings.meta.json
 
 # Bundled model files (downloaded by build:embeddings, copied at build time)
 models/
+.venv-exp/

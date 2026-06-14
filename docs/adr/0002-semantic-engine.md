@@ -26,10 +26,14 @@ Options considered:
 Use **(1) as the primary engine, fused with keyword search**, and keep (2) as a
 deferred, optional layer.
 
-- Embedding model: `all-MiniLM-L6-v2` (22 M params, 384-dim), run via
-  transformers.js. Corpus vectors are precomputed and int8-quantized
-  (`data/embeddings.bin`, ~29 MB); the query is embedded at runtime. Everything —
-  model, WASM runtime, vectors — is bundled, so semantic search is fully offline.
+- Embedding model: **`FremyCompany/BioLORD-2023`** (mpnet-base, ~110 M params,
+  768-dim) — a model trained specifically for clinical concept similarity. It is
+  not published as transformers.js-ready ONNX, so `scripts/convert-biolord.py`
+  exports it via optimum and quantizes to int8. Corpus vectors are precomputed
+  and int8-quantized (`data/embeddings.bin`, ~57 MB); the query is embedded at
+  runtime in the offscreen document. Model, WASM runtime, and vectors are all
+  bundled — semantic search is fully offline, which matters because the target is
+  a hospital PC with no local LLM and constrained network egress.
 - Keyword search (inverted index + code-prefix match) runs alongside for exact
   terminology and code lookups.
 - The two ranked lists are combined with **Reciprocal Rank Fusion** (`k = 60`),
@@ -39,20 +43,24 @@ deferred, optional layer.
 
 ## Consequences
 
-- **+** Bridges lay ↔ formal terminology with zero rule maintenance; verified on
-  "colon cancer" → C18.x, "piles" → K64.x, "high blood pressure" → hypertension.
-- **+** Fully offline and portable; no LLM, no GPU, no server. Query latency is a
-  few ms of dot products after the model warms up.
+- **+** Bridges lay ↔ formal terminology with zero rule maintenance. **Domain
+  knowledge, not model size, is the lever** — measured on the same queries
+  (`scripts/exp-clinical.py`, `scripts/compare-model.mjs`):
+  - MiniLM (22 M) and all-mpnet (110 M, general) both **miss** "heart attack" →
+    I21 and "high blood pressure" → I10; all-mpnet was even worse on "piles".
+  - **BioLORD-2023** surfaces I21.9 (acute MI), I10 (essential hypertension), and
+    K64.x (hemorrhoids for "piles") — the first model to get all three. PubMedBERT
+    was weaker (missed I21; mapped "piles" → "pilates").
+  - The int8 ONNX in transformers.js reproduces the PyTorch results (validated),
+    so quantization didn't cost the clinical gains.
+- **+** Fully offline and portable; no LLM, no GPU, no server — essential for the
+  hospital PC. Query latency is a few ms of dot products after the model warms up.
 - **+** Model is swappable via one constant (`MODEL_ID`) + rebuilding embeddings.
-- **−** MiniLM is a small general model and misses some clinical synonyms (e.g.
-  "heart attack" does not surface I21 acute MI). **Empirically, model size is not
-  the lever**: a 5× larger general model (all-mpnet-base-v2, 110 M) still missed
-  "heart attack" and was actually _worse_ on "piles" and "colon cancer" ordering
-  (see `scripts/compare-model.mjs`). The gap is clinical domain knowledge, so the
-  real fixes are a clinical embedding model (BioLORD/PubMedBERT — needs ONNX
-  conversion via optimum, no anonymous pre-built ONNX today) or an LLM
-  query-expansion step that knows "heart attack = myocardial infarction".
-- **−** Bundle grows by the model (~23 MB) + vectors (~29 MB) + ORT WASM (~21 MB).
+- **−** Bundle is large: model (~110 MB int8) + vectors (~57 MB) + ORT WASM
+  (~21 MB) → the unpacked extension is ~200 MB. Accepted for the offline quality.
+- **−** BioLORD has no anonymous prebuilt ONNX, so the build path needs Python +
+  optimum (`scripts/convert-biolord.py`), a heavier dev dependency than MiniLM's
+  direct download.
 - **−** int8 quantization is a small accuracy trade for a ~4× smaller vector file.
 - **−** Reranking can only reorder retrieved candidates, so retrieval quality
   (the embedding model) is the real ceiling — not the optional LLM layer.

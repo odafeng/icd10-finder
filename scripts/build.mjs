@@ -8,7 +8,7 @@ import { dirname, join } from 'node:path';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const DIST = join(ROOT, 'dist');
-const MODEL_DIR = 'Xenova/all-MiniLM-L6-v2'; // keep in sync with src/background/embedder.ts
+const MODEL_DIR = 'FremyCompany/BioLORD-2023'; // keep in sync with src/shared/model.ts
 const ORT = 'node_modules/@huggingface/transformers/dist';
 const watch = process.argv.includes('--watch');
 

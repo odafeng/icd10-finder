@@ -11,9 +11,9 @@ import { dirname, join } from 'node:path';
 import { env, pipeline } from '@huggingface/transformers';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
-const MODEL = 'Xenova/all-MiniLM-L6-v2';
-const DIM = 384;
-const BATCH = 128;
+const MODEL = 'FremyCompany/BioLORD-2023'; // clinical model; see scripts/convert-biolord.py
+const DIM = 768;
+const BATCH = 64;
 
 // Load the model from the repo's bundled copy (scripts/setup downloads it into
 // ./models). This is the same layout build.mjs ships in the extension and the

@@ -6,9 +6,8 @@
   "private": true,
   "scripts": {
     "fetch:icd10": "node scripts/fetch-icd10.mjs",
-    "fetch:model": "node scripts/fetch-model.mjs",
     "build:embeddings": "node scripts/build-embeddings.mjs",
-    "build:data": "npm run fetch:icd10 && npm run fetch:model && npm run build:embeddings",
+    "build:data": "npm run fetch:icd10 && npm run build:embeddings",
     "build": "node scripts/build.mjs",
     "dev": "node scripts/build.mjs --watch",
     "typecheck": "tsc --noEmit",

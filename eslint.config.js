@@ -4,7 +4,7 @@ import tsparser from '@typescript-eslint/parser';
 import prettier from 'eslint-config-prettier';
 
 export default [
-  { ignores: ['dist/**', 'node_modules/**', 'data/**'] },
+  { ignores: ['dist/**', 'node_modules/**', 'data/**', 'models/**', 'video/**', '.venv-exp/**'] },
   js.configs.recommended,
   {
     files: ['**/*.ts', '**/*.mjs', '**/*.js'],

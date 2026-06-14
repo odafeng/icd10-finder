@@ -29,8 +29,9 @@ highlight text
 - **Keyword search** is precise for official terminology and `C18`-style code
   prefixes.
 - **Vector search** bridges lay terms to formal wording — e.g. `colon cancer` →
-  `C18.x Malignant neoplasm of colon`, `piles` → `K64.x Hemorrhoids` — using a
-  bundled `all-MiniLM-L6-v2` model and precomputed int8 embeddings, all offline.
+  `C18.x Malignant neoplasm of colon`, `heart attack` → `I21 acute MI`, `piles` →
+  `K64.x Hemorrhoids` — using a bundled **`BioLORD-2023`** clinical embedding
+  model and precomputed int8 embeddings, all offline.
 - The two are combined with Reciprocal Rank Fusion (no per-engine score tuning).
 - An optional LLM reranker interface exists but is a no-op in v1
   (`src/search/rerank.ts`).
@@ -42,11 +43,16 @@ See `docs/adr/` for the design decisions and their trade-offs.
 ```bash
 npm install
 
-# One-time data pipeline (regenerates committed/bundled artifacts):
+# One-time data pipeline (regenerates bundled artifacts; not committed):
 npm run fetch:icd10        # data/icd10cm.json   (CMS FY2026, 74,719 codes)
-npm run fetch:model        # models/...          (MiniLM ONNX, for offline embedding)
-npm run build:embeddings   # data/embeddings.bin (int8 vectors, ~29 MB)
-# or all three:  npm run build:data
+#
+# Convert the BioLORD clinical model to int8 ONNX (needs a Python env with
+# optimum — it has no transformers.js-ready ONNX on the Hub):
+#   python3 -m venv .venv && .venv/bin/pip install "optimum[onnxruntime]" sentence-transformers
+#   .venv/bin/python scripts/convert-biolord.py   # → models/FremyCompany/BioLORD-2023/
+#
+npm run build:embeddings   # data/embeddings.bin (768-dim int8 vectors, ~57 MB)
+# fetch:icd10 + build:embeddings together:  npm run build:data
 
 # Bundle the extension into dist/:
 npm run build
@@ -110,10 +116,12 @@ to eyeball semantic quality / compare embedding models (not run in CI).
 
 - The data is pinned to **FY2026**; refreshing is a manual re-run of the fetch
   script.
-- MiniLM is a small general model, so some clinical synonyms miss — notably
-  **"heart attack" does not surface `I21` acute MI**. Swapping in a clinical
-  embedding model (BioLORD / PubMedBERT) or enabling an LLM rerank/expansion layer
-  would improve this; the model is swappable via `MODEL_ID` in
-  `src/background/embedder.ts` (+ rebuild embeddings).
+- The clinical model (`BioLORD-2023`) handles most lay terms well (`heart attack`
+  → I21, `high blood pressure` → I10, `piles` → K64), but it is still a similarity
+  model — for stubborn cases the optional LLM query-expansion layer (off by
+  default) can help. The model is swappable via `MODEL_ID` in `src/shared/model.ts`
+  (+ rebuild embeddings).
+- The bundled extension is large (~200 MB) because the clinical model and 768-dim
+  vectors are bundled for offline use.
 - Codes and descriptions are US ICD-10-CM English; Taiwan NHI uses the same
   English base, but Chinese-language lookup is not supported in v1.
