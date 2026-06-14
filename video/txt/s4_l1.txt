@@ -1,0 +1,1 @@
+chrome://extensions  →  開啟「開發者模式」
