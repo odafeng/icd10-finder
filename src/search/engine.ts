@@ -25,6 +25,22 @@ export class SearchEngine {
     this.reranker = opts.reranker ?? identityReranker;
   }
 
+  /** Fast keyword-only results — no model needed, returns in ms. Used as the
+   *  instant first phase while vector search warms up. */
+  keywordSearch(query: string, topK = 8): SearchResult[] {
+    return this.keyword.search(query, topK).map((h) => ({
+      code: this.opts.records[h.index].code,
+      name: this.opts.records[h.index].name,
+      score: h.score,
+      sources: ['keyword'],
+    }));
+  }
+
+  /** Warm up the embedding model (offscreen) so the first real lookup is fast. */
+  async warm(): Promise<void> {
+    if (this.opts.embedder) await this.opts.embedder('warmup');
+  }
+
   async search(query: string, topK = 10): Promise<SearchResult[]> {
     const kwHits = this.keyword.search(query, CANDIDATES);
 

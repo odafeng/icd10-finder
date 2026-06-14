@@ -31,6 +31,7 @@ const buildOptions = {
 
 async function copyAssets() {
   await cp(join(ROOT, 'public/manifest.json'), join(DIST, 'manifest.json'));
+  await cp(join(ROOT, 'public/icons'), join(DIST, 'icons'), { recursive: true });
   await cp(join(ROOT, 'src/ui/options.html'), join(DIST, 'options.html'));
   await cp(join(ROOT, 'src/offscreen/offscreen.html'), join(DIST, 'offscreen.html'));
   await cp(join(ROOT, 'data'), join(DIST, 'data'), { recursive: true });

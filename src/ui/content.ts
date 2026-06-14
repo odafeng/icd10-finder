@@ -35,6 +35,12 @@ const STYLE = `
   .msg.err { color: #b3261e; white-space: pre-wrap; word-break: break-word; }
   .toast { padding: 6px 10px; background: #e7f7ee; color: #176f3d;
     border-top: 1px solid #cdeed9; font-size: 12px; display: none; }
+  .foot { display: flex; align-items: center; gap: 7px; padding: 6px 10px;
+    border-top: 1px solid #f0f0f0; font-size: 12px; color: #8a8a8a; }
+  .spin { width: 11px; height: 11px; border: 2px solid #d4dae3;
+    border-top-color: #0b5fff; border-radius: 50%; animation: icdspin .7s linear infinite; }
+  .msg .spin { display: inline-block; vertical-align: -1px; margin-right: 7px; }
+  @keyframes icdspin { to { transform: rotate(360deg); } }
 `;
 
 let shadow: ShadowRoot | null = null;
@@ -42,6 +48,8 @@ let card: HTMLDivElement | null = null;
 let toastEl: HTMLDivElement | null = null;
 let debounce: ReturnType<typeof setTimeout> | undefined;
 let reqSeq = 0;
+// Position/query of the in-flight request, so the phase-2 push can re-render.
+let cur = { query: '', x: 0, y: 0 };
 
 // Whether to auto-show the card on selection. When off, lookups are triggered
 // only via the right-click context menu. Cached and kept in sync with options.
@@ -144,7 +152,19 @@ function openCard(query: string, x: number, y: number): HTMLDivElement {
   return body;
 }
 
-function renderResults(query: string, results: SearchResult[], x: number, y: number): void {
+function renderResults(
+  query: string,
+  results: SearchResult[],
+  x: number,
+  y: number,
+  refining = false,
+): void {
+  // Phase-1 with no keyword hit yet: keep showing "searching" — the semantic
+  // pass (still loading the model) may still find matches.
+  if (results.length === 0 && refining) {
+    renderMessage(query, '搜尋中…(首次使用需載入模型,約 10–20 秒)', x, y);
+    return;
+  }
   const body = openCard(query, x, y);
   if (results.length === 0) {
     const msg = document.createElement('div');
@@ -172,6 +192,17 @@ function renderResults(query: string, results: SearchResult[], x: number, y: num
     list.append(row);
   }
   body.append(list);
+
+  if (refining) {
+    const foot = document.createElement('div');
+    foot.className = 'foot';
+    const spin = document.createElement('span');
+    spin.className = 'spin';
+    const txt = document.createElement('span');
+    txt.textContent = '語意精算中…';
+    foot.append(spin, txt);
+    body.append(foot);
+  }
 }
 
 function renderMessage(query: string, text: string, x: number, y: number, isError = false): void {
@@ -184,9 +215,12 @@ function renderMessage(query: string, text: string, x: number, y: number, isErro
 
 function requestLookup(query: string, x: number, y: number): void {
   const seq = ++reqSeq;
+  cur = { query, x, y };
   renderMessage(query, '搜尋中…', x, y);
   try {
-    chrome.runtime.sendMessage({ type: 'icd-search', query }, (resp) => {
+    // Phase 1: instant keyword results. Phase 2 (vector/LLM) arrives later as an
+    // 'icd-update' push — see the listener below.
+    chrome.runtime.sendMessage({ type: 'icd-search', query, seq }, (resp) => {
       if (seq !== reqSeq) return; // a newer request superseded this one
       if (chrome.runtime.lastError) {
         renderMessage(query, `擴充功能錯誤:${chrome.runtime.lastError.message}`, x, y, true);
@@ -196,7 +230,7 @@ function requestLookup(query: string, x: number, y: number): void {
         renderMessage(query, `搜尋錯誤:${resp?.error ?? '沒有回應'}`, x, y, true);
         return;
       }
-      renderResults(query, resp.results as SearchResult[], x, y);
+      renderResults(query, resp.results as SearchResult[], x, y, resp.refining === true);
     });
   } catch {
     // The extension was reloaded/updated while this page kept the old content
@@ -237,11 +271,23 @@ document.addEventListener('mousedown', (e) => {
 
 console.debug('[ICD-10 Finder] content script loaded');
 
-// Context-menu path pushes results directly.
+// Warm the embedding model in the background as soon as a page loads, so the
+// first real lookup doesn't pay the full model-load wait.
+try {
+  chrome.runtime.sendMessage({ type: 'icd-warm' }, () => void chrome.runtime.lastError);
+} catch {
+  /* extension context not ready; ignore */
+}
+
 chrome.runtime.onMessage.addListener((msg) => {
+  // Context-menu path pushes results directly.
   if (msg?.type === 'icd-show') {
     const sel = window.getSelection();
     const rect = sel && sel.rangeCount ? sel.getRangeAt(0).getBoundingClientRect() : null;
     renderResults(msg.query, msg.results as SearchResult[], rect?.left ?? 80, rect?.bottom ?? 80);
+  }
+  // Phase-2 refinement (vector/LLM) for the current request → replace the card.
+  if (msg?.type === 'icd-update' && msg.seq === reqSeq) {
+    renderResults(cur.query, msg.results as SearchResult[], cur.x, cur.y, false);
   }
 });

@@ -58,7 +58,18 @@ async function searchWithExpansions(
   return [...byCode.values()].sort((a, b) => b.score - a.score).slice(0, 8);
 }
 
-async function search(query: string): Promise<SearchResult[]> {
+async function warm(): Promise<void> {
+  try {
+    await (await getEngine()).warm();
+  } catch (err) {
+    console.warn('warm failed:', err);
+  }
+}
+
+// Full search: keyword + vector fusion, plus optional LLM expansion / NLM. This
+// awaits the embedding model (slow on first use), so the worker returns instant
+// keyword results first and pushes this as a refinement (see the listener).
+async function fullSearch(query: string): Promise<SearchResult[]> {
   const engine = await getEngine();
 
   // Optional LLM query expansion (off by default; stored in storage.local).
@@ -88,13 +99,37 @@ async function search(query: string): Promise<SearchResult[]> {
   return results;
 }
 
-// Content script asks for a lookup.
-chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
+// Content script asks for a lookup (two-phase) or to warm the model.
+chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
+  if (msg?.type === 'icd-warm') {
+    void warm();
+    return false;
+  }
   if (msg?.type === 'icd-search' && typeof msg.query === 'string') {
-    search(msg.query)
-      .then((results) => sendResponse({ results }))
-      .catch((err) => sendResponse({ error: String(err) }));
-    return true; // keep the channel open for the async response
+    const tabId = sender.tab?.id;
+    const seq = msg.seq;
+    void (async () => {
+      try {
+        const engine = await getEngine();
+        // Phase 1 — instant keyword results (no model needed).
+        sendResponse({ results: engine.keywordSearch(msg.query, 8), refining: true });
+      } catch (err) {
+        sendResponse({ error: String(err) });
+        return;
+      }
+      // Phase 2 — full vector/LLM/online result, pushed to the tab when ready.
+      try {
+        const full = await fullSearch(msg.query);
+        if (tabId != null) {
+          void chrome.tabs
+            .sendMessage(tabId, { type: 'icd-update', seq, results: full })
+            .catch(() => {});
+        }
+      } catch (err) {
+        console.warn('full search failed:', err);
+      }
+    })();
+    return true; // keep the channel open for the async sendResponse
   }
   return false;
 });
@@ -110,6 +145,6 @@ chrome.runtime.onInstalled.addListener(() => {
 
 chrome.contextMenus.onClicked.addListener(async (info, tab) => {
   if (info.menuItemId !== 'icd-lookup' || !info.selectionText || !tab?.id) return;
-  const results = await search(info.selectionText);
+  const results = await fullSearch(info.selectionText);
   chrome.tabs.sendMessage(tab.id, { type: 'icd-show', query: info.selectionText, results });
 });
