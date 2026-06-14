@@ -248,13 +248,29 @@ document.addEventListener('mouseup', (e) => {
   const { clientX, clientY } = e;
   debounce = setTimeout(() => {
     const sel = window.getSelection();
-    const text = sel?.toString().trim() ?? '';
+    let text = sel?.toString().trim() ?? '';
+
+    // Text selected inside <input>/<textarea> (common in EMRs) is NOT part of
+    // window.getSelection() — read it from the field directly.
+    let inField = false;
+    if (!text) {
+      const el = document.activeElement as HTMLInputElement | HTMLTextAreaElement | null;
+      if (el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA')) {
+        const { selectionStart: s, selectionEnd: en, value } = el;
+        if (s != null && en != null && en > s) {
+          text = value.substring(s, en).trim();
+          inField = true;
+        }
+      }
+    }
+
     if (text.length < MIN_LEN || text.length > MAX_LEN || !/\p{L}/u.test(text)) {
       return;
     }
-    // Selections inside <input>/<textarea> produce a zero-area range rect; fall
-    // back to the mouse position so the card doesn't jump to the top-left.
-    const rect = sel && sel.rangeCount ? sel.getRangeAt(0).getBoundingClientRect() : null;
+    // DOM selections give a range rect; field selections don't — fall back to
+    // the mouse position so the card appears next to the cursor.
+    const rect =
+      !inField && sel && sel.rangeCount ? sel.getRangeAt(0).getBoundingClientRect() : null;
     const hasRect = rect && (rect.width > 0 || rect.height > 0);
     requestLookup(text, hasRect ? rect.left : clientX, hasRect ? rect.bottom : clientY);
   }, DEBOUNCE_MS);
