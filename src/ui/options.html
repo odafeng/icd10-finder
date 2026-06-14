@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>ICD-10 Finder — Options</title>
+    <style>
+      body {
+        font:
+          14px/1.5 -apple-system,
+          system-ui,
+          sans-serif;
+        max-width: 520px;
+        margin: 32px auto;
+        padding: 0 16px;
+        color: #1a1a1a;
+      }
+      h1 {
+        font-size: 18px;
+      }
+      .opt {
+        display: flex;
+        gap: 10px;
+        align-items: flex-start;
+        padding: 12px 0;
+        border-top: 1px solid #eee;
+      }
+      .opt label {
+        font-weight: 600;
+      }
+      .hint {
+        color: #666;
+        font-size: 13px;
+        margin-top: 2px;
+      }
+      code {
+        background: #f3f3f3;
+        padding: 1px 4px;
+        border-radius: 4px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>ICD-10 Finder</h1>
+    <p class="hint">
+      Highlight a disease name or keyword on any page to get recommended ICD-10-CM codes. All search
+      runs <strong>offline</strong> on your machine by default.
+    </p>
+
+    <div class="opt">
+      <input type="checkbox" id="onlineEnhance" />
+      <div>
+        <label for="onlineEnhance">Online enhancement (NLM)</label>
+        <div class="hint">
+          Also query the NLM Clinical Table Search Service for the freshest matches. This sends the
+          highlighted text to <code>clinicaltables.nlm.nih.gov</code>. Off by default — leave off
+          when working with patient data.
+        </div>
+      </div>
+    </div>
+
+    <p class="hint" id="status"></p>
+    <script src="options.js"></script>
+  </body>
+</html>

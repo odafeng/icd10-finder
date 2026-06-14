@@ -1,0 +1,23 @@
+{
+  "manifest_version": 3,
+  "name": "ICD-10 Finder",
+  "version": "0.1.0",
+  "description": "Highlight a disease name or keyword to get recommended ICD-10-CM codes via offline semantic + keyword search.",
+  "permissions": ["contextMenus", "storage"],
+  "optional_host_permissions": ["https://clinicaltables.nlm.nih.gov/*"],
+  "background": {
+    "service_worker": "service-worker.js",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "options_page": "options.html",
+  "action": {
+    "default_title": "ICD-10 Finder"
+  }
+}

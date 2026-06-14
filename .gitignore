@@ -1,0 +1,12 @@
+node_modules/
+dist/
+*.log
+.DS_Store
+
+# Generated data artifacts (regenerate via `npm run fetch:icd10` + `npm run build:embeddings`).
+# icd10cm.json is small enough to commit; embeddings.bin is large — keep it out of git.
+data/embeddings.bin
+data/embeddings.meta.json
+
+# Bundled model files (downloaded by build:embeddings, copied at build time)
+models/
