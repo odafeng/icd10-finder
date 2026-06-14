@@ -15,11 +15,16 @@ highlight text
   → content script (Shadow DOM card)         src/ui/content.ts
   → service worker                           src/background/service-worker.ts
       ├─ keyword search (inverted index)      src/search/keyword.ts
-      ├─ vector search (offline embeddings)   src/search/vector.ts  +  embedder.ts
+      ├─ vector search (offline embeddings)   src/search/vector.ts
+      │     └─ query embedding (offscreen)    src/offscreen/offscreen.ts
       ├─ Reciprocal Rank Fusion               src/search/fuse.ts
       └─ (optional) NLM online enhancement    src/background/nlm.ts
   → top codes rendered in the card
 ```
+
+> The embedding model runs in an **offscreen document**, not the service worker:
+> onnxruntime-web's WASM backend needs dynamic `import()`, which is disallowed in
+> a service worker. The worker delegates query embedding to the offscreen page.
 
 - **Keyword search** is precise for official terminology and `C18`-style code
   prefixes.

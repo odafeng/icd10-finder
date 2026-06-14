@@ -12,9 +12,14 @@ pages (including EMR apps with aggressive global CSS).
 
 ## Decision
 
-- **Manifest V3.** The search engine, model, and data live in the **background
-  service worker** (`type: module`). The content script is thin: detect the
-  selection, ask the worker over `chrome.runtime.sendMessage`, render the result.
+- **Manifest V3.** The search engine (keyword + vectors) and data live in the
+  **background service worker** (`type: module`). The content script is thin:
+  detect the selection, ask the worker over `chrome.runtime.sendMessage`, render.
+- **The embedding model runs in an offscreen document, not the worker.**
+  onnxruntime-web's WASM backend uses dynamic `import()`, which the HTML spec
+  forbids in a `ServiceWorkerGlobalScope`, so the model cannot load in the worker
+  at all. An offscreen document is a real Window context where `import()` + WASM
+  work; the worker delegates query embedding to it via runtime messaging.
 - Loading the model + 29 MB of vectors is **lazy** — only on the first lookup —
   and the worker may be torn down between uses (an accepted MV3 trade-off).
 - The on-page card is rendered into a **Shadow DOM** root with `:host { all:
